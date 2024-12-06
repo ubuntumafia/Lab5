@@ -24,9 +24,9 @@
 
     public Album(int id, string name, int artistID)
     {
-        ID = id;
-        Name = name;
-        ArtistID = artistID;
+        this.getID = id;
+        this.getName = name;
+        this.getArtistID = artistID;
     }
 
     public override string ToString()

@@ -52,13 +52,13 @@
 
     public Track(int id, string name, int albumID, int genreID, long duration, long size, decimal cost)
     {
-        ID = id;
-        Name = name;
-        AlbumID = albumID;
-        GenreID = genreID;
-        Duration = duration;
-        Size = size;
-        Cost = cost;
+        this.getID = id;
+        this.getName = name;
+        this.getAlbumID = albumID;
+        this.getGenreID = genreID;
+        this.getDuration = duration;
+        this.getSize = size;
+        this.getCost = cost;
     }
 
     public override string ToString()

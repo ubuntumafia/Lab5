@@ -16,8 +16,8 @@
     }
     public Artist(int id, string name)
     {
-        ID = id;
-        Name = name;
+        this.getID = id;
+        this.getName = name;
     }
 
     public override string ToString()

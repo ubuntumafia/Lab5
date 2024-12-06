@@ -54,16 +54,16 @@ public class Operations
 
     public void DeleteAlbumById(int id)
     {
-        Album album = Database.Albums.Find(a => a.ID == id);
+        Album album = Database.Albums.Find(a => a.getID == id);
         if (album != null)
         {
             // Удаляем все треки, связанные с этим альбомом
-            Database.Tracks.RemoveAll(t => t.AlbumID == album.ID);
+            Database.Tracks.RemoveAll(t => t.getAlbumID == album.getID);
             // Удаляем сам альбом
             Database.Albums.Remove(album);
             DeleteRowFromExcel("LR5-var16.xls", "Albums", id, 0);
-            Console.WriteLine($"Альбом '{album.Name}' и все его треки удалены.");
-            logger.LogAction($"Пользователь удалил альбом '{album.Name}'.");
+            Console.WriteLine($"Альбом '{album.getName}' и все его треки удалены.");
+            logger.LogAction($"Пользователь удалил альбом '{album.getName}'.");
         }
         else
         {
@@ -74,15 +74,15 @@ public class Operations
 
     public void DeleteArtistById(int id)
     {
-        Artist artist = Database.Artists.Find(a => a.ID == id);
+        Artist artist = Database.Artists.Find(a => a.getID == id);
         if (artist != null)
         {
-            Database.Albums.RemoveAll(a => a.ArtistID == artist.ID);
-            Database.Tracks.RemoveAll(t => Database.Albums.Any(a => a.ArtistID == artist.ID && a.ID == t.AlbumID));
+            Database.Albums.RemoveAll(a => a.getArtistID == artist.getID);
+            Database.Tracks.RemoveAll(t => Database.Albums.Any(a => a.getArtistID == artist.getID && a.getID == t.getAlbumID));
             Database.Artists.Remove(artist);
             DeleteRowFromExcel("LR5-var16.xls", "Artists", id, 1);
-            Console.WriteLine($"Артист '{artist.Name}', его альбомы и треки удалены.");
-            logger.LogAction($"Пользователь удалил артиста '{artist.Name}'.");
+            Console.WriteLine($"Артист '{artist.getName}', его альбомы и треки удалены.");
+            logger.LogAction($"Пользователь удалил артиста '{artist.getName}'.");
         }
         else
         {
@@ -93,13 +93,13 @@ public class Operations
 
     public void DeleteTrackById(int id)
     {
-        Track track = Database.Tracks.Find(t => t.ID == id);
+        Track track = Database.Tracks.Find(t => t.getID == id);
         if (track != null)
         {
             Database.Tracks.Remove(track);
             DeleteRowFromExcel("LR5-var16.xls", "Tracks", id, 2);
-            Console.WriteLine($"Трек '{track.Name}' удален.");
-            logger.LogAction($"Пользователь удалил трек '{track.Name}'.");
+            Console.WriteLine($"Трек '{track.getName}' удален.");
+            logger.LogAction($"Пользователь удалил трек '{track.getName}'.");
         }
         else
         {
@@ -110,14 +110,14 @@ public class Operations
 
     public void DeleteGenreById(int id)
     {
-        Genre genre = Database.Genres.Find(g => g.ID == id);
+        Genre genre = Database.Genres.Find(g => g.getID == id);
         if (genre != null)
         {
-            Database.Tracks.RemoveAll(t => t.GenreID == genre.ID);
+            Database.Tracks.RemoveAll(t => t.getGenreID == genre.getID);
             Database.Genres.Remove(genre);
             DeleteRowFromExcel("LR5-var16.xls", "Genres", id, 3);
-            Console.WriteLine($"Жанр '{genre.Name}' и все его треки удалены.");
-            logger.LogAction($"Пользователь удалил жанр '{genre.Name}'.");
+            Console.WriteLine($"Жанр '{genre.getName}' и все его треки удалены.");
+            logger.LogAction($"Пользователь удалил жанр '{genre.getName}'.");
         }
         else
         {
@@ -169,7 +169,7 @@ public class Operations
     {
         int albumId = GetIntInput("Введите ID альбома для изменения:", 1, int.MaxValue);
 
-        Album album = Database.Albums.Find(a => a.ID == albumId);
+        Album album = Database.Albums.Find(a => a.getID == albumId);
         if (album == null)
         {
             Console.WriteLine($"Альбом с ID {albumId} не найден.");
@@ -177,18 +177,18 @@ public class Operations
             return;
         }
 
-        string newName = GetStringInput($"Введите новое название альбома (текущее: {album.Name}) или 0 для пропуска:");
+        string newName = GetStringInput($"Введите новое название альбома (текущее: {album.getName}) или 0 для пропуска:");
         if (newName != "0")
         {
-            album.Name = newName;
-            logger.LogAction($"Пользователь изменил название альбома {albumId} на '{album.Name}'.");
+            album.getName = newName;
+            logger.LogAction($"Пользователь изменил название альбома {albumId} на '{album.getName}'.");
         }
 
-        int newArtistId = GetIntInput($"Введите новый ID артиста (текущий: {album.ArtistID}) или 0 для пропуска:", 0, int.MaxValue);
+        int newArtistId = GetIntInput($"Введите новый ID артиста (текущий: {album.getArtistID}) или 0 для пропуска:", 0, int.MaxValue);
         if (newArtistId != 0)
         {
-            album.ArtistID = newArtistId;
-            logger.LogAction($"Пользователь изменил ID артиста альбома {albumId} на '{album.ArtistID}'.");
+            album.getArtistID = newArtistId;
+            logger.LogAction($"Пользователь изменил ID артиста альбома {albumId} на '{album.getArtistID}'.");
         }
 
         Console.WriteLine("Альбом  обновлен.");
@@ -198,7 +198,7 @@ public class Operations
     {
         int artistId = GetIntInput("Введите ID артиста для изменения:", 1, int.MaxValue);
 
-        Artist artist = Database.Artists.Find(a => a.ID == artistId);
+        Artist artist = Database.Artists.Find(a => a.getID == artistId);
         if (artist == null)
         {
             Console.WriteLine($"Артист с ID {artistId} не найден.");
@@ -206,11 +206,11 @@ public class Operations
             return;
         }
 
-        string newName = GetStringInput($"Введите новое название артиста (текущее: {artist.Name}) или 0 для пропуска:");
+        string newName = GetStringInput($"Введите новое название артиста (текущее: {artist.getName}) или 0 для пропуска:");
         if (newName != "0")
         {
-            artist.Name = newName;
-            logger.LogAction($"Пользователь изменил название артиста {artistId} на '{artist.Name}'.");
+            artist.getName = newName;
+            logger.LogAction($"Пользователь изменил название артиста {artistId} на '{artist.getName}'.");
         }
 
         Console.WriteLine("Артист обновлен.");
@@ -220,7 +220,7 @@ public class Operations
     {
         int trackId = GetIntInput("Введите ID трека для изменения:", 1, int.MaxValue);
 
-        Track track = Database.Tracks.Find(t => t.ID == trackId);
+        Track track = Database.Tracks.Find(t => t.getID == trackId);
         if (track == null)
         {
             Console.WriteLine($"Трек с ID {trackId} не найден.");
@@ -228,46 +228,46 @@ public class Operations
             return;
         }
 
-        string newName = GetStringInput($"Введите новое название трека (текущее: {track.Name}) или 0 для пропуска:");
+        string newName = GetStringInput($"Введите новое название трека (текущее: {track.getName}) или 0 для пропуска:");
         if (newName != "0")
         {
-            track.Name = newName;
-            logger.LogAction($"Пользователь изменил название трека {trackId} на '{track.Name}'.");
+            track.getName = newName;
+            logger.LogAction($"Пользователь изменил название трека {trackId} на '{track.getName}'.");
         }
 
-        int newAlbumId = GetIntInput($"Введите новый ID альбома (текущий: {track.AlbumID}) или 0 для пропуска:", 0, int.MaxValue);
+        int newAlbumId = GetIntInput($"Введите новый ID альбома (текущий: {track.getAlbumID}) или 0 для пропуска:", 0, int.MaxValue);
         if (newAlbumId != 0)
         {
-            track.AlbumID = newAlbumId;
-            logger.LogAction($"Пользователь изменил ID альбома трека {trackId} на '{track.AlbumID}'.");
+            track.getAlbumID = newAlbumId;
+            logger.LogAction($"Пользователь изменил ID альбома трека {trackId} на '{track.getAlbumID}'.");
         }
 
-        int newGenreId = GetIntInput($"Введите новый ID жанра (текущий: {track.GenreID}) или 0 для пропуска:", 0, int.MaxValue);
+        int newGenreId = GetIntInput($"Введите новый ID жанра (текущий: {track.getGenreID}) или 0 для пропуска:", 0, int.MaxValue);
         if (newGenreId != 0)
         {
-            track.GenreID = newGenreId;
-            logger.LogAction($"Пользователь изменил ID жанра трека {trackId} на '{track.GenreID}'.");
+            track.getGenreID = newGenreId;
+            logger.LogAction($"Пользователь изменил ID жанра трека {trackId} на '{track.getGenreID}'.");
         }
 
-        long newDuration = GetLongInput($"Введите новую длительность трека (текущая: {track.Duration}) или 0 для пропуска:");
+        long newDuration = GetLongInput($"Введите новую длительность трека (текущая: {track.getDuration}) или 0 для пропуска:");
         if (newDuration != 0)
         {
-            track.Duration = newDuration;
-            logger.LogAction($"Пользователь изменил продолжительность трека {trackId} на '{track.Duration}'.");
+            track.getDuration = newDuration;
+            logger.LogAction($"Пользователь изменил продолжительность трека {trackId} на '{track.getDuration}'.");
         }
 
-        int newSize = GetIntInput($"Введите новый размер трека (текущий: {track.Size}) или 0 для пропуска:", 0, int.MaxValue);
+        int newSize = GetIntInput($"Введите новый размер трека (текущий: {track.getSize}) или 0 для пропуска:", 0, int.MaxValue);
         if (newSize != 0)
         {
-            track.Size = newSize;
-            logger.LogAction($"Пользователь изменил размер трека {trackId} на '{track.Size}'.");
+            track.getSize = newSize;
+            logger.LogAction($"Пользователь изменил размер трека {trackId} на '{track.getSize}'.");
         }
 
-        decimal newCost = GetDecimalInput($"Введите новую стоимость трека (текущая: {track.Cost}) или 0 для пропуска:");
+        decimal newCost = GetDecimalInput($"Введите новую стоимость трека (текущая: {track.getCost}) или 0 для пропуска:");
         if (newCost != 0)
         {
-            track.Cost = newCost;
-            logger.LogAction($"Пользователь изменил стоимость трека {trackId} на '{track.Cost}'.");
+            track.getCost = newCost;
+            logger.LogAction($"Пользователь изменил стоимость трека {trackId} на '{track.getCost}'.");
         }
 
         Console.WriteLine("Трек обновлен.");
@@ -277,7 +277,7 @@ public class Operations
     {
         int genreId = GetIntInput("Введите ID жанра для изменения:", 1, int.MaxValue);
 
-        Genre genre = Database.Genres.Find(g => g.ID == genreId);
+        Genre genre = Database.Genres.Find(g => g.getID == genreId);
         if (genre == null)
         {
             Console.WriteLine($"Жанр с ID {genreId} не найден.");
@@ -285,11 +285,11 @@ public class Operations
             return;
         }
 
-        string newName = GetStringInput($"Введите новое название жанра (текущее: {genre.Name}) или 0 для пропуска:");
+        string newName = GetStringInput($"Введите новое название жанра (текущее: {genre.getName}) или 0 для пропуска:");
         if (newName != "0")
         {
-            genre.Name = newName;
-            logger.LogAction($"Пользователь изменил название жанра {genreId} на '{genre.Name}'.");
+            genre.getName = newName;
+            logger.LogAction($"Пользователь изменил название жанра {genreId} на '{genre.getName}'.");
         }
 
         Console.WriteLine($"Жанр обновлен.");
@@ -357,7 +357,7 @@ public class Operations
         if (!string.IsNullOrEmpty(newAlbumName) || !string.IsNullOrEmpty(newArtistId))
         {
             int artistId = int.Parse(newArtistId);
-            Database.Albums.Add(new Album(Database.Albums.Max(a => a.ID) + 1, newAlbumName, artistId));
+            Database.Albums.Add(new Album(Database.Albums.Max(a => a.getID) + 1, newAlbumName, artistId));
             Console.WriteLine($"Альбом '{newAlbumName}' добавлен.");
             logger.LogAction($"Пользователь добавил альбом '{newAlbumName}'.");
         }
@@ -370,7 +370,7 @@ public class Operations
 
         if (!string.IsNullOrEmpty(newArtistName))
         {
-            Database.Artists.Add(new Artist(Database.Artists.Max(a => a.ID) + 1, newArtistName));
+            Database.Artists.Add(new Artist(Database.Artists.Max(a => a.getID) + 1, newArtistName));
             Console.WriteLine($"Артист '{newArtistName}' добавлен.");
             logger.LogAction($"Пользователь добавил исполнителя '{newArtistName}'.");
         }
@@ -404,7 +404,7 @@ public class Operations
             int size = int.Parse(newSize);
             decimal cost = decimal.Parse(newCost);
 
-            Database.Tracks.Add(new Track(Database.Tracks.Max(t => t.ID) + 1, newTrackName, albumId, genreId, duration, size, cost));
+            Database.Tracks.Add(new Track(Database.Tracks.Max(t => t.getID) + 1, newTrackName, albumId, genreId, duration, size, cost));
             Console.WriteLine($"Трек '{newTrackName}' добавлен.");
             logger.LogAction($"Пользователь добавил исполнителя '{newTrackName}'.");
         }
@@ -417,7 +417,7 @@ public class Operations
 
         if (!string.IsNullOrEmpty(newGenreName))
         {
-            Database.Genres.Add(new Genre(Database.Genres.Max(g => g.ID) + 1, newGenreName));
+            Database.Genres.Add(new Genre(Database.Genres.Max(g => g.getID) + 1, newGenreName));
             Console.WriteLine($"Жанр '{newGenreName}' добавлен.");
             logger.LogAction($"Пользователь добавил жанр '{newGenreName}'.");
         }
@@ -509,7 +509,7 @@ public class Operations
     public int GetTrackCountWithPriceGreaterThan150()
     {
         int trackCount = Database.Tracks
-            .Count(t => t.Cost >= 150);
+            .Count(t => t.getCost >= 150);
 
         Console.WriteLine($"Количество треков с ценой 150 и выше: {trackCount}");
 
@@ -525,30 +525,30 @@ public class Operations
         {
             // Находим треки этого жанра
             var tracksInGenre = Database.Tracks
-                .Where(t => t.GenreID == genre.ID)
+                .Where(t => t.getGenreID == genre.getID)
                 .ToList();
 
             if (!tracksInGenre.Any())
             {
-                Console.WriteLine($"Жанр: {genre.Name} - Нет треков.");
+                Console.WriteLine($"Жанр: {genre.getName} - Нет треков.");
                 continue;
             }
 
             // Находим трек с максимальной ценой
             var maxPriceTrack = tracksInGenre
-                .OrderByDescending(t => t.Cost)
+                .OrderByDescending(t => t.getCost)
                 .First();
 
             // Выводим информацию о жанре, самом дорогом треке и его цене
-            Console.WriteLine($"Жанр: {genre.Name, -18} | Трек: {maxPriceTrack.Name, -65} | Цена: {maxPriceTrack.Cost}");
+            Console.WriteLine($"Жанр: {genre.getName, -18} | Трек: {maxPriceTrack.getName, -65} | Цена: {maxPriceTrack.getCost}");
         }
     }
 
     public void DisplayAlbumsAndTracksByOzzyOsbourne()
     {
         var ozzyId = Database.Artists
-            .Where(a => a.Name == "Ozzy Osbourne")
-            .Select(a => a.ID)
+            .Where(a => a.getName == "Ozzy Osbourne")
+            .Select(a => a.getID)
             .FirstOrDefault();
 
         if (ozzyId == 0)
@@ -558,7 +558,7 @@ public class Operations
         }
 
         var albums = Database.Albums
-            .Where(a => a.ArtistID == ozzyId)
+            .Where(a => a.getArtistID == ozzyId)
             .ToList();
 
         if (!albums.Any())
@@ -569,12 +569,12 @@ public class Operations
 
         foreach (var album in albums)
         {
-            Console.WriteLine($"Альбом: {album.Name}");
+            Console.WriteLine($"Альбом: {album.getName}");
 
             // Получаем треки для каждого альбома
             var tracks = Database.Tracks
-                .Where(t => t.AlbumID == album.ID)
-                .Select(t => t.Name)
+                .Where(t => t.getAlbumID == album.getID)
+                .Select(t => t.getName)
                 .ToList();
 
             if (!tracks.Any())
@@ -595,21 +595,21 @@ public class Operations
     public void FindMetalArtistWithSmallestTotalTrackSize()
     {
         var result = Database.Tracks
-            .Join(Database.Albums, t => t.AlbumID, a => a.ID, (t, a) => new { Track = t, Album = a })
-            .Join(Database.Genres, ta => ta.Track.GenreID, g => g.ID, (ta, g) => new { Track = ta.Track, Album = ta.Album, Genre = g })
-            .Where(tag => tag.Genre.Name == "Metal")
-            .GroupBy(tag => tag.Album.ArtistID)
+            .Join(Database.Albums, t => t.getAlbumID, a => a.getID, (t, a) => new { Track = t, Album = a })
+            .Join(Database.Genres, ta => ta.Track.getGenreID, g => g.getID, (ta, g) => new { Track = ta.Track, Album = ta.Album, Genre = g })
+            .Where(tag => tag.Genre.getName == "Metal")
+            .GroupBy(tag => tag.Album.getArtistID)
             .Select(g => new
             {
                 ArtistID = g.Key,
-                TotalSizeMB = g.Sum(tag => (decimal)tag.Track.Size) / (1024 * 1024)
+                TotalSizeMB = g.Sum(tag => (decimal)tag.Track.getSize) / (1024 * 1024)
             })
             .OrderBy(x => x.TotalSizeMB)
             .FirstOrDefault();
 
         if (result != null)
         {
-            var artistName = Database.Artists.FirstOrDefault(a => a.ID == result.ArtistID)?.Name;
+            var artistName = Database.Artists.FirstOrDefault(a => a.getID == result.ArtistID)?.getName;
             Console.WriteLine($"Исполнитель с наименьшим суммарным размером песен в жанре Metal: {artistName} ({(int)result.TotalSizeMB} МБ)");
         }
         else
