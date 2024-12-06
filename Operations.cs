@@ -2,6 +2,7 @@
 using DocumentFormat.OpenXml.Office2019.Presentation;
 using System;
 using System.Collections.Generic;
+using Aspose.Cells;
 
 public class Operations
 {
@@ -60,6 +61,7 @@ public class Operations
             Database.Tracks.RemoveAll(t => t.AlbumID == album.ID);
             // Удаляем сам альбом
             Database.Albums.Remove(album);
+            DeleteRowFromExcel("LR5-var16.xls", "Albums", id, 0);
             Console.WriteLine($"Альбом '{album.Name}' и все его треки удалены.");
             logger.LogAction($"Пользователь удалил альбом '{album.Name}'.");
         }
@@ -78,6 +80,7 @@ public class Operations
             Database.Albums.RemoveAll(a => a.ArtistID == artist.ID);
             Database.Tracks.RemoveAll(t => Database.Albums.Any(a => a.ArtistID == artist.ID && a.ID == t.AlbumID));
             Database.Artists.Remove(artist);
+            DeleteRowFromExcel("LR5-var16.xls", "Artists", id, 1);
             Console.WriteLine($"Артист '{artist.Name}', его альбомы и треки удалены.");
             logger.LogAction($"Пользователь удалил артиста '{artist.Name}'.");
         }
@@ -94,6 +97,7 @@ public class Operations
         if (track != null)
         {
             Database.Tracks.Remove(track);
+            DeleteRowFromExcel("LR5-var16.xls", "Tracks", id, 2);
             Console.WriteLine($"Трек '{track.Name}' удален.");
             logger.LogAction($"Пользователь удалил трек '{track.Name}'.");
         }
@@ -111,6 +115,7 @@ public class Operations
         {
             Database.Tracks.RemoveAll(t => t.GenreID == genre.ID);
             Database.Genres.Remove(genre);
+            DeleteRowFromExcel("LR5-var16.xls", "Genres", id, 3);
             Console.WriteLine($"Жанр '{genre.Name}' и все его треки удалены.");
             logger.LogAction($"Пользователь удалил жанр '{genre.Name}'.");
         }
@@ -121,7 +126,45 @@ public class Operations
         }
     }
 
-    
+    public static void DeleteRowFromExcel(string filePath, string sheetName, int recordId, int idColumnIndex)
+    {
+        var workbook = new Workbook(filePath);
+
+        var worksheet = workbook.Worksheets[sheetName];
+        if (worksheet == null) 
+        {
+            Console.WriteLine($"Лист с именем '{sheetName}' не найден.");
+            return;
+        }
+
+        // Получаем ячейки на листе
+        var cells = worksheet.Cells;
+        int rowToDelete = -1;
+
+        // Перебираем строки на листе
+        for (int i = 0; i <= cells.MaxDataRow; i++)
+        {
+            var cellValue = cells[i, idColumnIndex].StringValue;
+            if (int.TryParse(cellValue, out int currentId) && currentId == recordId) // Если ID совпадает
+            {
+                rowToDelete = i; // Запоминаем индекс строки
+                break;
+            }
+        }
+
+        if (rowToDelete >= 0)
+        {
+            cells.DeleteRow(rowToDelete);
+            workbook.Save(filePath);
+            Console.WriteLine($"Запись с ID {recordId} удалена из листа '{sheetName}'.");
+        }
+        else
+        {
+            Console.WriteLine($"Запись с ID {recordId} не найдена на листе '{sheetName}'.");
+        }
+    }
+
+
     public void UpdateAlbum()
     {
         int albumId = GetIntInput("Введите ID альбома для изменения:", 1, int.MaxValue);
@@ -252,6 +295,57 @@ public class Operations
         Console.WriteLine($"Жанр обновлен.");
     }
 
+    public static void UpdateRowInExcel(string filePath, string sheetName, int recordId, params object[] newValues)
+    {
+        var workbook = new Workbook(filePath);
+
+        var worksheet = workbook.Worksheets[sheetName];
+        if (worksheet == null)
+        {
+            Console.WriteLine($"Лист с именем '{sheetName}' не найден.");
+            return;
+        }
+
+        var cells = worksheet.Cells;
+        int rowToUpdate = -1;
+
+        // Перебираем все строки в листе
+        for (int i = 0; i <= cells.MaxDataRow; i++)
+        {
+            // Считываем значение из первой колонки строки (предполагается, что ID находится в колонке 0)
+            var cellValue = cells[i, 0].StringValue;
+            if (int.TryParse(cellValue, out int currentId) && currentId == recordId)
+            {
+                rowToUpdate = i;
+                break;
+            }
+        }
+
+        if (rowToUpdate >= 0)
+        {
+            if (newValues.Length > 0)
+            {
+                cells[rowToUpdate, 1].PutValue(newValues[0]);
+            }
+
+            if (newValues.Length > 1)
+            {
+                for (int col = 2; col < newValues.Length + 1; col++)
+                {
+                    cells[rowToUpdate, col].PutValue(newValues[col - 1]);
+                }
+            }
+
+            workbook.Save(filePath);
+            Console.WriteLine($"Запись с ID {recordId} обновлена на листе '{sheetName}'.");
+        }
+        else
+        {
+            // Если строка с указанным ID не найдена, выводим сообщение
+            Console.WriteLine($"Запись с ID {recordId} не найдена на листе '{sheetName}'.");
+        }
+    }
+
     public void AddAlbum()
     {
         Console.WriteLine("Введите название нового альбома (оставьте пустым, чтобы не менять):");
@@ -327,6 +421,47 @@ public class Operations
             Console.WriteLine($"Жанр '{newGenreName}' добавлен.");
             logger.LogAction($"Пользователь добавил жанр '{newGenreName}'.");
         }
+    }
+
+    public static void AddRowToExcel(string filePath, string sheetName, int idColumnIndex, object idValue, params object[] values)
+    {
+        var workbook = new Workbook(filePath);
+
+        // Получаем нужный лист по имени
+        var worksheet = workbook.Worksheets[sheetName];
+        if (worksheet == null)
+        {
+            Console.WriteLine($"Лист с именем '{sheetName}' не найден.");
+            return;
+        }
+
+        bool idExists = false;
+        for (int row = 0; row <= worksheet.Cells.MaxDataRow; row++)
+        {
+            if (worksheet.Cells[row, idColumnIndex].Value != null && worksheet.Cells[row, idColumnIndex].Value.ToString() == idValue.ToString())
+            {
+                idExists = true;
+                break;
+            }
+
+        }
+
+        if (idExists)
+        {
+            Console.WriteLine($"Запись с ID '{idValue}' уже существует в листе '{sheetName}'.");
+            return;
+        }
+
+        int newRow = worksheet.Cells.MaxDataRow + 1;
+
+        for (int col = 0; col < values.Length; col++)
+        {
+            worksheet.Cells[newRow, col].PutValue(values[col]);
+        }
+
+        workbook.Save(filePath);
+
+        Console.WriteLine($"Добавлена запись в лист '{sheetName}'.");
     }
 
     public int GetIntInput(string prompt, int min, int max)

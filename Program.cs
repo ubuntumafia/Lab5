@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AudioLibrary
+namespace Lab5
 {
     public class Program
     {

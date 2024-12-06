@@ -1,8 +1,26 @@
 ﻿public class Album
 {
-    public int ID { get; set; }
-    public string Name { get; set; }
-    public int ArtistID { get; set; }
+    private int ID;
+    private string Name;
+    private int ArtistID;
+
+    public int getID
+    {
+        get { return ID; }
+        set { ID = value; }
+    }
+
+    public string getName
+    {
+        get { return Name; }
+        set { Name = value; }
+    }
+
+    public int getArtistID
+    {
+        get { return ArtistID; }
+        set { ArtistID = value; }
+    }
 
     public Album(int id, string name, int artistID)
     {

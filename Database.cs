@@ -19,7 +19,7 @@ public class Database
         LoadDataFromExcel(pathToXlsFile);
     }
 
-    private void LoadDataFromExcel(string pathToXlsFile)
+    public void LoadDataFromExcel(string pathToXlsFile)
     {
         Workbook workbook = new Workbook(pathToXlsFile);
         WorksheetCollection worksheets = workbook.Worksheets;

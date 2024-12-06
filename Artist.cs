@@ -1,8 +1,19 @@
 ﻿public class Artist
 {
-    public int ID { get; set; }
-    public string Name { get; set; }
+    private int ID;
+    private string Name;
 
+    public int getID
+    {
+        get { return ID; }
+        set { ID = value; }
+    }
+
+    public string getName
+    {
+        get { return  Name; }
+        set { Name = value; }
+    }
     public Artist(int id, string name)
     {
         ID = id;
