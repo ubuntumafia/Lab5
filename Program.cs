@@ -37,11 +37,9 @@ namespace Lab5
 
             logger.InitializeLogger(logFileName, !createNewFile);
 
-            // Чтение базы данных из Excel-файла
             var operations = new Operations("LR5-var16.xls");
             logger.LogAction("Начата работа программы.");
 
-            // Вывод меню
             while (true)
             {
                 Console.WriteLine("Выберите действие:");

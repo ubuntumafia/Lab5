@@ -57,18 +57,16 @@ public class Operations
         Album album = Database.Albums.Find(a => a.getID == id);
         if (album != null)
         {
-            // Удаляем все треки, связанные с этим альбомом
             Database.Tracks.RemoveAll(t => t.getAlbumID == album.getID);
-            // Удаляем сам альбом
             Database.Albums.Remove(album);
-            DeleteRowFromExcel("LR5-var16.xls", "Albums", id, 0);
             Console.WriteLine($"Альбом '{album.getName}' и все его треки удалены.");
             logger.LogAction($"Пользователь удалил альбом '{album.getName}'.");
+            SaveChangesInXls();
         }
         else
         {
             Console.WriteLine($"Альбом с ID {id} не найден.");
-            logger.LogAction("Пользователь пытался удалить альбом.");
+            logger.LogAction($"Пользователь ввел неправильный ID альбома для удаления.");
         }
     }
 
@@ -80,14 +78,14 @@ public class Operations
             Database.Albums.RemoveAll(a => a.getArtistID == artist.getID);
             Database.Tracks.RemoveAll(t => Database.Albums.Any(a => a.getArtistID == artist.getID && a.getID == t.getAlbumID));
             Database.Artists.Remove(artist);
-            DeleteRowFromExcel("LR5-var16.xls", "Artists", id, 1);
             Console.WriteLine($"Артист '{artist.getName}', его альбомы и треки удалены.");
             logger.LogAction($"Пользователь удалил артиста '{artist.getName}'.");
+            SaveChangesInXls();
         }
         else
         {
             Console.WriteLine($"Артист с ID {id} не найден.");
-            logger.LogAction($"Пользователь пытался удалить артиста.");
+            logger.LogAction($"Пользователь ввел неправильный ID артиста для удаления.");
         }
     }
 
@@ -97,14 +95,14 @@ public class Operations
         if (track != null)
         {
             Database.Tracks.Remove(track);
-            DeleteRowFromExcel("LR5-var16.xls", "Tracks", id, 2);
             Console.WriteLine($"Трек '{track.getName}' удален.");
             logger.LogAction($"Пользователь удалил трек '{track.getName}'.");
+            SaveChangesInXls();
         }
         else
         {
             Console.WriteLine($"Трек с ID {id} не найден.");
-            logger.LogAction($"Пользователь пытался удалить артиста.");
+            logger.LogAction($"Пользователь ввел неправильный ID трека для удаления.");
         }
     }
 
@@ -115,52 +113,14 @@ public class Operations
         {
             Database.Tracks.RemoveAll(t => t.getGenreID == genre.getID);
             Database.Genres.Remove(genre);
-            DeleteRowFromExcel("LR5-var16.xls", "Genres", id, 3);
             Console.WriteLine($"Жанр '{genre.getName}' и все его треки удалены.");
             logger.LogAction($"Пользователь удалил жанр '{genre.getName}'.");
+            SaveChangesInXls();
         }
         else
         {
             Console.WriteLine($"Жанр с ID {id} не найден.");
-            logger.LogAction($"Пользователь пытался удалить жанр.");
-        }
-    }
-
-    public static void DeleteRowFromExcel(string filePath, string sheetName, int recordId, int idColumnIndex)
-    {
-        var workbook = new Workbook(filePath);
-
-        var worksheet = workbook.Worksheets[sheetName];
-        if (worksheet == null) 
-        {
-            Console.WriteLine($"Лист с именем '{sheetName}' не найден.");
-            return;
-        }
-
-        // Получаем ячейки на листе
-        var cells = worksheet.Cells;
-        int rowToDelete = -1;
-
-        // Перебираем строки на листе
-        for (int i = 0; i <= cells.MaxDataRow; i++)
-        {
-            var cellValue = cells[i, idColumnIndex].StringValue;
-            if (int.TryParse(cellValue, out int currentId) && currentId == recordId) // Если ID совпадает
-            {
-                rowToDelete = i; // Запоминаем индекс строки
-                break;
-            }
-        }
-
-        if (rowToDelete >= 0)
-        {
-            cells.DeleteRow(rowToDelete);
-            workbook.Save(filePath);
-            Console.WriteLine($"Запись с ID {recordId} удалена из листа '{sheetName}'.");
-        }
-        else
-        {
-            Console.WriteLine($"Запись с ID {recordId} не найдена на листе '{sheetName}'.");
+            logger.LogAction($"Пользователь ввел неправильный ID жанра для удаления.");
         }
     }
 
@@ -173,25 +133,28 @@ public class Operations
         if (album == null)
         {
             Console.WriteLine($"Альбом с ID {albumId} не найден.");
-            logger.LogAction($"Пользователь пытался изменить альбом.");
+            logger.LogAction($"Пользователь ввел неправильный ID альбома для изменения.");
             return;
         }
 
-        string newName = GetStringInput($"Введите новое название альбома (текущее: {album.getName}) или 0 для пропуска:");
-        if (newName != "0")
+        Console.WriteLine($"Введите новое название альбома (текущее: {album.getName}) или оставьте пустым для пропуска:");
+        string newName = Console.ReadLine();
+        if (!string.IsNullOrWhiteSpace(newName))
         {
             album.getName = newName;
             logger.LogAction($"Пользователь изменил название альбома {albumId} на '{album.getName}'.");
+            SaveChangesInXls();
         }
 
-        int newArtistId = GetIntInput($"Введите новый ID артиста (текущий: {album.getArtistID}) или 0 для пропуска:", 0, int.MaxValue);
+        int newArtistId = GetIntInput($"Введите новый ID артиста (текущий: {album.getArtistID}) или оставьте пустым для пропуска:", 0, int.MaxValue);
         if (newArtistId != 0)
         {
             album.getArtistID = newArtistId;
             logger.LogAction($"Пользователь изменил ID артиста альбома {albumId} на '{album.getArtistID}'.");
+            SaveChangesInXls();
         }
 
-        Console.WriteLine("Альбом  обновлен.");
+        Console.WriteLine("Альбом обновлен.");
     }
 
     public void UpdateArtist()
@@ -202,15 +165,17 @@ public class Operations
         if (artist == null)
         {
             Console.WriteLine($"Артист с ID {artistId} не найден.");
-            logger.LogAction($"Пользователь пытался изменить артиста.");
+            logger.LogAction($"Пользователь ввел неправильный ID артиста для изменения.");
             return;
         }
 
-        string newName = GetStringInput($"Введите новое название артиста (текущее: {artist.getName}) или 0 для пропуска:");
-        if (newName != "0")
+        Console.WriteLine($"Введите новое название артиста (текущее: {artist.getName}) или оставьте пустым для пропуска:");
+        string newName = Console.ReadLine();
+        if (!string.IsNullOrWhiteSpace(newName))
         {
             artist.getName = newName;
             logger.LogAction($"Пользователь изменил название артиста {artistId} на '{artist.getName}'.");
+            SaveChangesInXls();
         }
 
         Console.WriteLine("Артист обновлен.");
@@ -224,12 +189,13 @@ public class Operations
         if (track == null)
         {
             Console.WriteLine($"Трек с ID {trackId} не найден.");
-            logger.LogAction($"Пользователь пытался изменить трек.");
+            logger.LogAction($"Пользователь ввел неправильный ID трека для изменения.");
             return;
         }
 
-        string newName = GetStringInput($"Введите новое название трека (текущее: {track.getName}) или 0 для пропуска:");
-        if (newName != "0")
+        Console.WriteLine($"Введите новое название трека (текущее: {track.getName}) или оставьте пустым для пропуска:");
+        string newName = Console.ReadLine();
+        if (!string.IsNullOrWhiteSpace(newName))
         {
             track.getName = newName;
             logger.LogAction($"Пользователь изменил название трека {trackId} на '{track.getName}'.");
@@ -249,11 +215,17 @@ public class Operations
             logger.LogAction($"Пользователь изменил ID жанра трека {trackId} на '{track.getGenreID}'.");
         }
 
-        long newDuration = GetLongInput($"Введите новую длительность трека (текущая: {track.getDuration}) или 0 для пропуска:");
-        if (newDuration != 0)
+        Console.WriteLine($"Введите новую длительность трека (текущая: {track.getDuration}) или 0 для пропуска:");
+        string input = Console.ReadLine();
+        if (long.TryParse(input, out long newDuration) && newDuration != 0)
         {
             track.getDuration = newDuration;
             logger.LogAction($"Пользователь изменил продолжительность трека {trackId} на '{track.getDuration}'.");
+        }
+        else
+        {
+            Console.WriteLine("Пожалуйста, введите число!");
+            logger.LogAction($"Ошибка ввода пользователем.");
         }
 
         int newSize = GetIntInput($"Введите новый размер трека (текущий: {track.getSize}) или 0 для пропуска:", 0, int.MaxValue);
@@ -263,14 +235,22 @@ public class Operations
             logger.LogAction($"Пользователь изменил размер трека {trackId} на '{track.getSize}'.");
         }
 
-        decimal newCost = GetDecimalInput($"Введите новую стоимость трека (текущая: {track.getCost}) или 0 для пропуска:");
-        if (newCost != 0)
+        Console.WriteLine($"Введите новую стоимость трека (текущая: {track.getCost}) или 0 для пропуска:");
+        string input1 = Console.ReadLine();
+
+        if (decimal.TryParse(input1, out decimal newCost) && newCost != 0)
         {
             track.getCost = newCost;
             logger.LogAction($"Пользователь изменил стоимость трека {trackId} на '{track.getCost}'.");
         }
+        else
+        {
+            Console.WriteLine("Пожалуйста, введите число!");
+            logger.LogAction($"Ошибка ввода пользователем.");
+        }
 
         Console.WriteLine("Трек обновлен.");
+        SaveChangesInXls();
     }
 
     public void UpdateGenre()
@@ -281,188 +261,272 @@ public class Operations
         if (genre == null)
         {
             Console.WriteLine($"Жанр с ID {genreId} не найден.");
-            logger.LogAction($"Пользователь пытался изменить жанр.");
+            logger.LogAction($"Пользователь ввел неправильный ID жанра для изменения.");
             return;
         }
 
-        string newName = GetStringInput($"Введите новое название жанра (текущее: {genre.getName}) или 0 для пропуска:");
-        if (newName != "0")
+        Console.WriteLine($"Введите новое название жанра (текущее: {genre.getName}) или оставьте пустым для пропуска:");
+        string newName = Console.ReadLine();
+        if (!string.IsNullOrWhiteSpace(newName))
         {
             genre.getName = newName;
+            SaveChangesInXls();
             logger.LogAction($"Пользователь изменил название жанра {genreId} на '{genre.getName}'.");
         }
 
-        Console.WriteLine($"Жанр обновлен.");
+        Console.WriteLine("Жанр обновлен.");
     }
 
-    public static void UpdateRowInExcel(string filePath, string sheetName, int recordId, params object[] newValues)
-    {
-        var workbook = new Workbook(filePath);
-
-        var worksheet = workbook.Worksheets[sheetName];
-        if (worksheet == null)
-        {
-            Console.WriteLine($"Лист с именем '{sheetName}' не найден.");
-            return;
-        }
-
-        var cells = worksheet.Cells;
-        int rowToUpdate = -1;
-
-        // Перебираем все строки в листе
-        for (int i = 0; i <= cells.MaxDataRow; i++)
-        {
-            // Считываем значение из первой колонки строки (предполагается, что ID находится в колонке 0)
-            var cellValue = cells[i, 0].StringValue;
-            if (int.TryParse(cellValue, out int currentId) && currentId == recordId)
-            {
-                rowToUpdate = i;
-                break;
-            }
-        }
-
-        if (rowToUpdate >= 0)
-        {
-            if (newValues.Length > 0)
-            {
-                cells[rowToUpdate, 1].PutValue(newValues[0]);
-            }
-
-            if (newValues.Length > 1)
-            {
-                for (int col = 2; col < newValues.Length + 1; col++)
-                {
-                    cells[rowToUpdate, col].PutValue(newValues[col - 1]);
-                }
-            }
-
-            workbook.Save(filePath);
-            Console.WriteLine($"Запись с ID {recordId} обновлена на листе '{sheetName}'.");
-        }
-        else
-        {
-            // Если строка с указанным ID не найдена, выводим сообщение
-            Console.WriteLine($"Запись с ID {recordId} не найдена на листе '{sheetName}'.");
-        }
-    }
 
     public void AddAlbum()
     {
-        Console.WriteLine("Введите название нового альбома (оставьте пустым, чтобы не менять):");
-        string newAlbumName = Console.ReadLine();
+        string newAlbumName;
+        int artistId;
 
-        Console.WriteLine("Введите ID нового артиста:");
-        string newArtistId = Console.ReadLine();
-
-        if (!string.IsNullOrEmpty(newAlbumName) || !string.IsNullOrEmpty(newArtistId))
+        while (true)
         {
-            int artistId = int.Parse(newArtistId);
-            Database.Albums.Add(new Album(Database.Albums.Max(a => a.getID) + 1, newAlbumName, artistId));
-            Console.WriteLine($"Альбом '{newAlbumName}' добавлен.");
-            logger.LogAction($"Пользователь добавил альбом '{newAlbumName}'.");
+            Console.WriteLine("Введите название нового альбома:");
+            newAlbumName = Console.ReadLine();
+
+            if (string.IsNullOrEmpty(newAlbumName))
+            {
+                Console.WriteLine("Ошибка: название альбома не может быть пустым.");
+                logger.LogAction($"Ошибка ввода названия нового альбома.");
+                continue;
+            }
+
+            Console.WriteLine("Введите ID нового артиста:");
+            string newArtistId = Console.ReadLine();
+
+            if (!int.TryParse(newArtistId, out artistId))
+            {
+                Console.WriteLine("Ошибка: ID артиста должен быть числом.");
+                logger.LogAction($"Ошибка ввода ID артиста.");
+                continue;
+            }
+
+            break;
         }
+
+        Database.Albums.Add(new Album(Database.Albums.Max(a => a.getID) + 1, newAlbumName, artistId));
+        Console.WriteLine($"Альбом '{newAlbumName}' добавлен.");
+        logger.LogAction($"Пользователь добавил альбом '{newAlbumName}'.");
+        SaveChangesInXls();
     }
 
     public void AddArtist()
     {
-        Console.WriteLine("Введите название нового артиста:");
-        string newArtistName = Console.ReadLine();
+        string newArtistName;
 
-        if (!string.IsNullOrEmpty(newArtistName))
+        while (true)
         {
-            Database.Artists.Add(new Artist(Database.Artists.Max(a => a.getID) + 1, newArtistName));
-            Console.WriteLine($"Артист '{newArtistName}' добавлен.");
-            logger.LogAction($"Пользователь добавил исполнителя '{newArtistName}'.");
+            Console.WriteLine("Введите название нового артиста:");
+            newArtistName = Console.ReadLine();
+
+            if (string.IsNullOrEmpty(newArtistName))
+            {
+                Console.WriteLine("Ошибка: название артиста не может быть пустым.");
+                logger.LogAction($"Ошибка ввода названия нового артиста.");
+                continue;
+            }
+
+            break;
         }
+
+        Database.Artists.Add(new Artist(Database.Artists.Max(a => a.getID) + 1, newArtistName));
+        Console.WriteLine($"Артист '{newArtistName}' добавлен.");
+        logger.LogAction($"Пользователь добавил исполнителя '{newArtistName}'.");
+        SaveChangesInXls();
     }
 
     public void AddTrack()
     {
-        Console.WriteLine("Введите название нового трека:");
-        string newTrackName = Console.ReadLine();
+        string newTrackName;
+        int albumId, genreId;
+        long duration;
+        int size;
+        decimal cost;
 
-        Console.WriteLine("Введите ID альбома:");
-        string newAlbumId = Console.ReadLine();
-
-        Console.WriteLine("Введите ID жанра:");
-        string newGenreId = Console.ReadLine();
-
-        Console.WriteLine("Введите длительность трека:");
-        string newDuration = Console.ReadLine();
-
-        Console.WriteLine("Введите размер трека:");
-        string newSize = Console.ReadLine();
-
-        Console.WriteLine("Введите цену трека:");
-        string newCost = Console.ReadLine();
-
-        if (!string.IsNullOrEmpty(newTrackName) && !string.IsNullOrEmpty(newAlbumId) && !string.IsNullOrEmpty(newGenreId) && !string.IsNullOrEmpty(newDuration) && !string.IsNullOrEmpty(newSize) && !string.IsNullOrEmpty(newCost))
+        while (true)
         {
-            int albumId = int.Parse(newAlbumId);
-            int genreId = int.Parse(newGenreId);
-            long duration = long.Parse(newDuration);
-            int size = int.Parse(newSize);
-            decimal cost = decimal.Parse(newCost);
+            Console.WriteLine("Введите название нового трека:");
+            newTrackName = Console.ReadLine();
 
-            Database.Tracks.Add(new Track(Database.Tracks.Max(t => t.getID) + 1, newTrackName, albumId, genreId, duration, size, cost));
-            Console.WriteLine($"Трек '{newTrackName}' добавлен.");
-            logger.LogAction($"Пользователь добавил исполнителя '{newTrackName}'.");
+            if (string.IsNullOrEmpty(newTrackName))
+            {
+                Console.WriteLine("Ошибка: название трека не может быть пустым.");
+                logger.LogAction($"Ошибка ввода названия нового трека.");
+                continue;
+            }
+
+            Console.WriteLine("Введите ID альбома:");
+            string newAlbumId = Console.ReadLine();
+
+            if (!int.TryParse(newAlbumId, out albumId))
+            {
+                Console.WriteLine("Ошибка: ID альбома должен быть числом.");
+                logger.LogAction($"Ошибка ввода ID альбома.");
+                continue;
+            }
+
+            Console.WriteLine("Введите ID жанра:");
+            string newGenreId = Console.ReadLine();
+
+            if (!int.TryParse(newGenreId, out genreId))
+            {
+                Console.WriteLine("Ошибка: ID жанра должен быть числом.");
+                logger.LogAction($"Ошибка ввода ID жанра.");
+                continue;
+            }
+
+            Console.WriteLine("Введите длительность трека:");
+            string newDuration = Console.ReadLine();
+
+            if (!long.TryParse(newDuration, out duration))
+            {
+                Console.WriteLine("Ошибка: длительность трека должна быть числом.");
+                logger.LogAction($"Ошибка ввода длительности трека.");
+                continue;
+            }
+
+            Console.WriteLine("Введите размер трека:");
+            string newSize = Console.ReadLine();
+
+            if (!int.TryParse(newSize, out size))
+            {
+                Console.WriteLine("Ошибка: размер трека должен быть числом.");
+                logger.LogAction($"Ошибка ввода размера трека.");
+                continue;
+            }
+
+            Console.WriteLine("Введите цену трека:");
+            string newCost = Console.ReadLine();
+
+            if (!decimal.TryParse(newCost, out cost))
+            {
+                Console.WriteLine("Ошибка: цена трека должна быть числом.");
+                logger.LogAction($"Ошибка ввода цены трека.");
+                continue;
+            }
+
+            break;
         }
+
+        Database.Tracks.Add(new Track(Database.Tracks.Max(t => t.getID) + 1, newTrackName, albumId, genreId, duration, size, cost));
+        Console.WriteLine($"Трек '{newTrackName}' добавлен.");
+        SaveChangesInXls();
+        logger.LogAction($"Пользователь добавил трек '{newTrackName}'.");
     }
+
 
     public void AddGenre()
     {
-        Console.WriteLine("Введите название нового жанра:");
-        string newGenreName = Console.ReadLine();
+        string newGenreName;
 
-        if (!string.IsNullOrEmpty(newGenreName))
+        while (true)
         {
-            Database.Genres.Add(new Genre(Database.Genres.Max(g => g.getID) + 1, newGenreName));
-            Console.WriteLine($"Жанр '{newGenreName}' добавлен.");
-            logger.LogAction($"Пользователь добавил жанр '{newGenreName}'.");
-        }
-    }
+            Console.WriteLine("Введите название нового жанра:");
+            newGenreName = Console.ReadLine();
 
-    public static void AddRowToExcel(string filePath, string sheetName, int idColumnIndex, object idValue, params object[] values)
-    {
-        var workbook = new Workbook(filePath);
-
-        // Получаем нужный лист по имени
-        var worksheet = workbook.Worksheets[sheetName];
-        if (worksheet == null)
-        {
-            Console.WriteLine($"Лист с именем '{sheetName}' не найден.");
-            return;
-        }
-
-        bool idExists = false;
-        for (int row = 0; row <= worksheet.Cells.MaxDataRow; row++)
-        {
-            if (worksheet.Cells[row, idColumnIndex].Value != null && worksheet.Cells[row, idColumnIndex].Value.ToString() == idValue.ToString())
+            if (string.IsNullOrEmpty(newGenreName))
             {
-                idExists = true;
-                break;
+                Console.WriteLine("Ошибка: название жанра не может быть пустым.");
+                logger.LogAction($"Ошибка ввода пользователем.");
+                continue;
             }
 
+            break;
         }
 
-        if (idExists)
-        {
-            Console.WriteLine($"Запись с ID '{idValue}' уже существует в листе '{sheetName}'.");
-            return;
-        }
-
-        int newRow = worksheet.Cells.MaxDataRow + 1;
-
-        for (int col = 0; col < values.Length; col++)
-        {
-            worksheet.Cells[newRow, col].PutValue(values[col]);
-        }
-
-        workbook.Save(filePath);
-
-        Console.WriteLine($"Добавлена запись в лист '{sheetName}'.");
+        Database.Genres.Add(new Genre(Database.Genres.Max(g => g.getID) + 1, newGenreName));
+        Console.WriteLine($"Жанр '{newGenreName}' добавлен.");
+        logger.LogAction($"Пользователь добавил жанр '{newGenreName}'.");
+        SaveChangesInXls();
     }
+
+    public void SaveChangesInXls()
+    {
+        try
+        {
+            Workbook wb = new Workbook(PathToXlsFile);
+            Worksheet wsAlbums = wb.Worksheets["Альбомы"];
+            Worksheet wsArtists = wb.Worksheets["Артисты"];
+            Worksheet wsTracks = wb.Worksheets["Треки"];
+            Worksheet wsGenres = wb.Worksheets["Жанры"];
+
+            // Сохранение альбомов
+            for (int i = 0; i < Database.Albums.Count; i++)
+            {
+                var album = Database.Albums[i];
+                wsAlbums.Cells[$"A{i + 2}"].PutValue(album.getID);
+                wsAlbums.Cells[$"B{i + 2}"].PutValue(album.getName);
+                wsAlbums.Cells[$"C{i + 2}"].PutValue(album.getArtistID);
+            }
+
+            // Удаление альбомов, которые больше не существуют
+            for (int i = Database.Albums.Count + 1; i <= wsAlbums.Cells.MaxDataRow + 1; i++)
+            {
+                wsAlbums.Cells.DeleteRow(i);
+            }
+
+            // Сохранение артистов
+            for (int i = 0; i < Database.Artists.Count; i++)
+            {
+                var artist = Database.Artists[i];
+                wsArtists.Cells[$"A{i + 2}"].PutValue(artist.getID);
+                wsArtists.Cells[$"B{i + 2}"].PutValue(artist.getName);
+            }
+
+            // Удаление артистов, которые больше не существуют
+            for (int i = Database.Artists.Count + 1; i <= wsArtists.Cells.MaxDataRow + 1; i++)
+            {
+                wsArtists.Cells.DeleteRow(i);
+            }
+
+            // Сохранение треков
+            for (int i = 0; i < Database.Tracks.Count; i++)
+            {
+                var track = Database.Tracks[i];
+                wsTracks.Cells[$"A{i + 2}"].PutValue(track.getID);
+                wsTracks.Cells[$"B{i + 2}"].PutValue(track.getName);
+                wsTracks.Cells[$"C{i + 2}"].PutValue(track.getAlbumID);
+                wsTracks.Cells[$"D{i + 2}"].PutValue(track.getGenreID);
+                wsTracks.Cells[$"E{i + 2}"].PutValue(track.getDuration);
+                wsTracks.Cells[$"F{i + 2}"].PutValue(track.getSize);
+                wsTracks.Cells[$"G{i + 2}"].PutValue(track.getCost);
+            }
+
+            // Удаление треков, которые больше не существуют
+            for (int i = Database.Tracks.Count + 1; i <= wsTracks.Cells.MaxDataRow + 1; i++)
+            {
+                wsTracks.Cells.DeleteRow(i);
+            }
+
+            // Сохранение жанров
+            for (int i = 0; i < Database.Genres.Count; i++)
+            {
+                var genre = Database.Genres[i];
+                wsGenres.Cells[$"A{i + 2}"].PutValue(genre.getID);
+                wsGenres.Cells[$"B{i + 2}"].PutValue(genre.getName);
+            }
+
+            // Удаление жанров, которые больше не существуют
+            for (int i = Database.Genres.Count + 1; i <= wsGenres.Cells.MaxDataRow + 1; i++)
+            {
+                wsGenres.Cells.DeleteRow(i);
+            }
+
+            wb.Save(PathToXlsFile);
+            logger.LogAction("Изменения успешно сохранены в файл.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при сохранении изменений в файл Excel: {ex.Message}");
+            logger.LogAction($"Ошибка при сохранении изменений в файл Excel: {ex.Message}");
+        }
+    }
+
+
 
     public int GetIntInput(string prompt, int min, int max)
     {
@@ -477,33 +541,9 @@ public class Operations
             else
             {
                 Console.WriteLine($"Пожалуйста, введите число от {min} до {max}.");
+                logger.LogAction($"Ошибка ввода пользователем.");
             }
         }
-    }
-
-    private string GetStringInput(string prompt)
-    {
-        Console.WriteLine(prompt);
-        return Console.ReadLine();
-    }
-
-    private long GetLongInput(string prompt)
-    {
-        long value;
-        while (!long.TryParse(Console.ReadLine(), out value))
-        {
-            Console.WriteLine("Неверный ввод. Пожалуйста, введите число.");
-        }
-        return value;
-    }
-    private decimal GetDecimalInput(string prompt)
-    {
-        decimal value;
-        while (!decimal.TryParse(Console.ReadLine(), out value))
-        {
-            Console.WriteLine("Неверный ввод. Пожалуйста, введите число.");
-        }
-        return value;
     }
 
     public int GetTrackCountWithPriceGreaterThan150()
